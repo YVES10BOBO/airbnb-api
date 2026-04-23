@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(timeout 5 npm run start)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/users)",
+      "Bash(curl -s http://localhost:3000/users/1)",
+      "Bash(curl -s http://localhost:3000/users/999)",
+      "Bash(curl -s -X POST http://localhost:3000/users -H \"Content-Type: application/json\" -d '{\"name\":\"Test\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/users -H \"Content-Type: application/json\" -d '{\"name\":\"Dan Lee\",\"email\":\"dan@example.com\",\"username\":\"danlee\",\"phone\":\"+1-555-0199\",\"role\":\"guest\"}')",
+      "Bash(curl -s http://localhost:3000/listings)",
+      "Read(//c/Users/USER/airbnb-api/=== GET /**)",
+      "Bash(curl -s http://localhost:3000/unknown-route kill %1)",
+      "Bash(psql --version)",
+      "Read(//c/Program Files/PostgreSQL//**)",
+      "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql\" --version)",
+      "Bash(npm uninstall *)",
+      "Bash(npx prisma *)",
+      "Read(//c/Users/USER/AppData/Local/Temp/claude/c--Users-USER-airbnb-api/ab9b7fa8-da5a-4d1c-8353-4a64e7d4aaa7/tasks/**)",
+      "Bash(/c/Users/USER/airbnb-api/node_modules/.bin/prisma init *)"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String
+  username String
+  phone    String
+  role     String
+  avatar   String?
+  bio      String?
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model Listing {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  location      String
+  pricePerNight Float     @map("price_per_night")
+  guests        Int
+  type          String
+  amenities     String[]
+  rating        Float?
+  host          String
+  bookings      Booking[]
+
+  @@map("listings")
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  listingId  Int      @map("listing_id")
+  checkIn    DateTime @map("check_in")
+  checkOut   DateTime @map("check_out")
+  guests     Int
+  totalPrice Float    @map("total_price")
+  status     String   @default("confirmed")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id])
+  listing    Listing  @relation(fields: [listingId], references: [id])
+
+  @@map("bookings")
+}
