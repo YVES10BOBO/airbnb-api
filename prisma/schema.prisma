@@ -8,49 +8,103 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  HOST
+  GUEST
+}
+
+enum ListingType {
+  APARTMENT
+  HOUSE
+  VILLA
+  CABIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
 model User {
-  id       Int       @id @default(autoincrement())
-  name     String
-  email    String
-  username String
-  phone    String
-  role     String
-  avatar   String?
-  bio      String?
-  bookings Booking[]
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  username         String    @unique
+  phone            String
+  role             Role      @default(GUEST)
+  password         String
+  avatar           String?
+  avatarPublicId   String?   @map("avatar_public_id")
+  bio              String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  resetToken       String?   @map("reset_token")
+  resetTokenExpiry DateTime? @map("reset_token_expiry")
+  listings         Listing[]
+  bookings         Booking[]
+  profile          Profile?
 
   @@map("users")
 }
 
+model Profile {
+  id      Int     @id @default(autoincrement())
+  bio     String?
+  website String?
+  country String?
+  userId  Int     @unique @map("user_id")
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
 model Listing {
-  id            Int       @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   title         String
   description   String
   location      String
-  pricePerNight Float     @map("price_per_night")
+  pricePerNight Float       @map("price_per_night")
   guests        Int
-  type          String
+  type          ListingType
   amenities     String[]
   rating        Float?
-  host          String
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  hostId        Int         @map("host_id")
+  host          User        @relation(fields: [hostId], references: [id], onDelete: Cascade)
   bookings      Booking[]
+  photos        ListingPhoto[]
 
+  @@index([location])
+  @@index([pricePerNight])
   @@map("listings")
 }
 
-model Booking {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  listingId  Int      @map("listing_id")
-  checkIn    DateTime @map("check_in")
-  checkOut   DateTime @map("check_out")
-  guests     Int
-  totalPrice Float    @map("total_price")
-  status     String   @default("confirmed")
-  createdAt  DateTime @default(now()) @map("created_at")
+model ListingPhoto {
+  id        Int     @id @default(autoincrement())
+  url       String
+  publicId  String  @map("public_id")
+  listingId Int     @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
-  user       User     @relation(fields: [userId], references: [id])
-  listing    Listing  @relation(fields: [listingId], references: [id])
+  @@map("listing_photos")
+}
+
+model Booking {
+  id         Int           @id @default(autoincrement())
+  guestId    Int           @map("guest_id")
+  listingId  Int           @map("listing_id")
+  checkIn    DateTime      @map("check_in")
+  checkOut   DateTime      @map("check_out")
+  guests     Int
+  totalPrice Float         @map("total_price")
+  status     BookingStatus @default(PENDING)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  guest   User    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@map("bookings")
 }

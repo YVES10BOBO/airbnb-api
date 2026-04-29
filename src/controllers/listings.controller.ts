@@ -1,86 +1,128 @@
-import { Request, Response } from "express";
-import prisma from "../db";
+import { Request, Response, NextFunction } from "express";
+import prisma from "../config/prisma";
+import { AuthRequest } from "../middlewares/auth.middleware";
+import { createListingSchema, updateListingSchema } from "../validators/listings.validator";
+import { Prisma } from "../generated/prisma/client";
 
-export async function getAllListings(_req: Request, res: Response): Promise<void> {
-  const listings = await prisma.listing.findMany();
-  res.json(listings);
-}
+export async function getAllListings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { location, type, maxPrice, page, limit, sortBy, order } = req.query;
 
-export async function getListingById(req: Request, res: Response): Promise<void> {
-  const listing = await prisma.listing.findUnique({ where: { id: Number(req.params.id) } });
-  if (!listing) {
-    res.status(404).json({ error: "Listing not found" });
-    return;
-  }
-  res.json(listing);
-}
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.max(1, parseInt(limit as string) || 10);
+    const skip = (pageNum - 1) * limitNum;
 
-export async function createListing(req: Request, res: Response): Promise<void> {
-  if (!req.body) {
-    res.status(400).json({ error: "Request body is missing. Set Content-Type: application/json" });
-    return;
-  }
-  if (Array.isArray(req.body)) {
-    res.status(400).json({ error: "Send a single listing object, not an array" });
-    return;
-  }
-  const { title, description, location, pricePerNight, guests, type, amenities, rating, host } = req.body;
-  if (!title || !description || !location || !pricePerNight || !guests || !type || !amenities || !host) {
-    res.status(400).json({
-      error: "Missing required fields: title, description, location, pricePerNight, guests, type, amenities, host",
+    const where: Prisma.ListingWhereInput = {};
+    if (location) where.location = { contains: location as string, mode: "insensitive" };
+    if (type) where.type = type as any;
+    if (maxPrice) where.pricePerNight = { lte: Number(maxPrice) };
+
+    const orderBy: Prisma.ListingOrderByWithRelationInput = {};
+    if (sortBy === "pricePerNight") orderBy.pricePerNight = (order === "desc" ? "desc" : "asc");
+    else orderBy.id = "desc";
+
+    const [listings, total] = await Promise.all([
+      prisma.listing.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limitNum,
+        include: {
+          host: { select: { id: true, name: true, avatar: true } },
+          _count: { select: { bookings: true } },
+        },
+      }),
+      prisma.listing.count({ where }),
+    ]);
+
+    res.json({
+      data: listings,
+      meta: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) },
     });
-    return;
+  } catch (error) {
+    next(error);
   }
-  if (typeof guests !== "number" || guests < 1) {
-    res.status(400).json({ error: "guests must be a number greater than 0" });
-    return;
-  }
-  if (typeof pricePerNight !== "number" || pricePerNight < 1) {
-    res.status(400).json({ error: "pricePerNight must be a number greater than 0" });
-    return;
-  }
-  if (rating !== undefined && (rating < 0 || rating > 5)) {
-    res.status(400).json({ error: "rating must be between 0 and 5" });
-    return;
-  }
-  const listing = await prisma.listing.create({
-    data: { title, description, location, pricePerNight, guests, type, amenities, rating, host },
-  });
-  res.status(201).json(listing);
 }
 
-export async function updateListing(req: Request, res: Response): Promise<void> {
-  const existing = await prisma.listing.findUnique({ where: { id: Number(req.params.id) } });
-  if (!existing) {
-    res.status(404).json({ error: "Listing not found" });
-    return;
+export async function getListingById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: Number(req.params.id) },
+      include: {
+        host: true,
+        bookings: {
+          include: {
+            guest: { select: { id: true, name: true, avatar: true } },
+          },
+        },
+      },
+    });
+    if (!listing) {
+      res.status(404).json({ error: "Listing not found" });
+      return;
+    }
+    res.json(listing);
+  } catch (error) {
+    next(error);
   }
-  const { guests, pricePerNight, rating } = req.body;
-  if (guests !== undefined && (typeof guests !== "number" || guests < 1)) {
-    res.status(400).json({ error: "guests must be a number greater than 0" });
-    return;
-  }
-  if (pricePerNight !== undefined && (typeof pricePerNight !== "number" || pricePerNight < 1)) {
-    res.status(400).json({ error: "pricePerNight must be a number greater than 0" });
-    return;
-  }
-  if (rating !== undefined && (rating < 0 || rating > 5)) {
-    res.status(400).json({ error: "rating must be between 0 and 5" });
-    return;
-  }
-  const listing = await prisma.listing.update({
-    where: { id: Number(req.params.id) },
-    data: req.body,
-  });
-  res.json(listing);
 }
 
-export async function deleteListing(req: Request, res: Response): Promise<void> {
-  const existing = await prisma.listing.findUnique({ where: { id: Number(req.params.id) } });
-  if (!existing) {
-    res.status(404).json({ error: "Listing not found" });
-    return;
+export async function createListing(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = createListingSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ errors: result.error.issues });
+      return;
+    }
+    const listing = await prisma.listing.create({
+      data: { ...result.data, hostId: req.userId! },
+    });
+    res.status(201).json(listing);
+  } catch (error) {
+    next(error);
   }
-  const listing = await prisma.listing.delete({ where: { id: Number(req.params.id) } });
-  res.json({ message: "Listing deleted", listing });
+}
+
+export async function updateListing(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const listing = await prisma.listing.findUnique({ where: { id: Number(req.params.id) } });
+    if (!listing) {
+      res.status(404).json({ error: "Listing not found" });
+      return;
+    }
+    if (listing.hostId !== req.userId && req.role !== "ADMIN") {
+      res.status(403).json({ error: "You can only edit your own listings" });
+      return;
+    }
+    const result = updateListingSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ errors: result.error.issues });
+      return;
+    }
+    const updated = await prisma.listing.update({
+      where: { id: Number(req.params.id) },
+      data: result.data,
+    });
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteListing(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const listing = await prisma.listing.findUnique({ where: { id: Number(req.params.id) } });
+    if (!listing) {
+      res.status(404).json({ error: "Listing not found" });
+      return;
+    }
+    if (listing.hostId !== req.userId && req.role !== "ADMIN") {
+      res.status(403).json({ error: "You can only delete your own listings" });
+      return;
+    }
+    await prisma.listing.delete({ where: { id: Number(req.params.id) } });
+    res.json({ message: "Listing deleted" });
+  } catch (error) {
+    next(error);
+  }
 }
