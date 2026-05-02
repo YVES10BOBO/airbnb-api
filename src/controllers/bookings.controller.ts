@@ -22,7 +22,7 @@ export async function getAllBookings(_req: AuthRequest, res: Response, next: Nex
 export async function getBookingById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const booking = await prisma.booking.findUnique({
-      where: { id: Number(req.params.id) },
+      where: { id: req.params.id },
       include: {
         listing: { include: { host: { select: { id: true, name: true } } } },
         guest: { select: { id: true, name: true, email: true, avatar: true } },
@@ -110,7 +110,7 @@ export async function createBooking(req: AuthRequest, res: Response, next: NextF
 
 export async function cancelBooking(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const booking = await prisma.booking.findUnique({ where: { id: Number(req.params.id) } });
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.id } });
     if (!booking) {
       res.status(404).json({ error: "Booking not found" });
       return;
@@ -124,7 +124,7 @@ export async function cancelBooking(req: AuthRequest, res: Response, next: NextF
       return;
     }
     const updated = await prisma.booking.update({
-      where: { id: Number(req.params.id) },
+      where: { id: req.params.id },
       data: { status: "CANCELLED" },
     });
 
@@ -161,13 +161,13 @@ export async function updateBookingStatus(req: AuthRequest, res: Response, next:
       res.status(400).json({ error: "status must be one of: PENDING, CONFIRMED, CANCELLED" });
       return;
     }
-    const booking = await prisma.booking.findUnique({ where: { id: Number(req.params.id) } });
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.id } });
     if (!booking) {
       res.status(404).json({ error: "Booking not found" });
       return;
     }
     const updated = await prisma.booking.update({
-      where: { id: Number(req.params.id) },
+      where: { id: req.params.id },
       data: { status },
     });
     res.json(updated);

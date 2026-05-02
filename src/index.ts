@@ -1,26 +1,28 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
-import authRouter from "./routes/auth.routes";
-import usersRouter from "./routes/users.routes";
-import listingsRouter from "./routes/listings.routes";
-import bookingsRouter from "./routes/bookings.routes";
-import uploadRouter from "./routes/upload.routes";
+import compression from "compression";
+import morgan from "morgan";
+import v1Router from "./routes/v1/index";
 import { errorHandler } from "./middlewares/errorHandler";
 import { connectDB } from "./config/prisma";
 import { setupSwagger } from "./config/swagger";
+import { generalLimiter } from "./middlewares/rateLimiter";
 
 const app = express();
 const PORT = Number(process.env["PORT"]) || 3000;
 
+app.use(process.env["NODE_ENV"] === "production" ? morgan("combined") : morgan("dev"));
+app.use(compression());
 app.use(express.json());
+app.use(generalLimiter);
 
 setupSwagger(app);
 
-app.use("/auth", authRouter);
-app.use("/users", usersRouter);
-app.use("/listings", listingsRouter);
-app.use("/bookings", bookingsRouter);
-app.use("/", uploadRouter);
+app.get("/health", (_req: Request, res: Response) => {
+  res.json({ status: "ok", uptime: process.uptime(), timestamp: new Date() });
+});
+
+app.use("/api/v1", v1Router);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });

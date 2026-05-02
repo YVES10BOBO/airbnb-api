@@ -16,7 +16,7 @@ export async function getAllUsers(_req: Request, res: Response, next: NextFuncti
 
 export async function getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -59,7 +59,7 @@ export async function createUser(req: Request, res: Response, next: NextFunction
 
 export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const existing = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const existing = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!existing) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -70,7 +70,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
       return;
     }
     const user = await prisma.user.update({
-      where: { id: Number(req.params.id) },
+      where: { id: req.params.id },
       data: result.data as any,
     });
     const { password: _, ...safe } = user as any;
@@ -82,12 +82,12 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
 
 export async function deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const existing = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const existing = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!existing) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-    await prisma.user.delete({ where: { id: Number(req.params.id) } });
+    await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ message: "User deleted" });
   } catch (error) {
     next(error);
@@ -96,13 +96,13 @@ export async function deleteUser(req: Request, res: Response, next: NextFunction
 
 export async function getUserListings(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
     }
     const listings = await prisma.listing.findMany({
-      where: { hostId: Number(req.params.id) },
+      where: { hostId: req.params.id },
       include: { _count: { select: { bookings: true } } },
     });
     res.json(listings);
@@ -113,13 +113,13 @@ export async function getUserListings(req: Request, res: Response, next: NextFun
 
 export async function getUserBookings(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
     }
     const bookings = await prisma.booking.findMany({
-      where: { guestId: Number(req.params.id) },
+      where: { guestId: req.params.id },
       include: {
         listing: { select: { id: true, title: true, location: true, pricePerNight: true } },
       },
@@ -130,10 +130,9 @@ export async function getUserBookings(req: Request, res: Response, next: NextFun
   }
 }
 
-// Profile endpoints
 export async function getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const profile = await prisma.profile.findUnique({ where: { userId: Number(req.params.id) } });
+    const profile = await prisma.profile.findUnique({ where: { userId: req.params.id } });
     if (!profile) {
       res.status(404).json({ error: "Profile not found" });
       return;
@@ -146,12 +145,12 @@ export async function getProfile(req: Request, res: Response, next: NextFunction
 
 export async function createProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-    const existing = await prisma.profile.findUnique({ where: { userId: Number(req.params.id) } });
+    const existing = await prisma.profile.findUnique({ where: { userId: req.params.id } });
     if (existing) {
       res.status(409).json({ error: "Profile already exists for this user" });
       return;
@@ -162,7 +161,7 @@ export async function createProfile(req: Request, res: Response, next: NextFunct
       return;
     }
     const profile = await prisma.profile.create({
-      data: { ...result.data, userId: Number(req.params.id) },
+      data: { ...result.data, userId: req.params.id },
     });
     res.status(201).json(profile);
   } catch (error) {
@@ -172,12 +171,12 @@ export async function createProfile(req: Request, res: Response, next: NextFunct
 
 export async function updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-    const existing = await prisma.profile.findUnique({ where: { userId: Number(req.params.id) } });
+    const existing = await prisma.profile.findUnique({ where: { userId: req.params.id } });
     if (!existing) {
       res.status(404).json({ error: "Profile not found" });
       return;
@@ -188,7 +187,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       return;
     }
     const profile = await prisma.profile.update({
-      where: { userId: Number(req.params.id) },
+      where: { userId: req.params.id },
       data: result.data,
     });
     res.json(profile);

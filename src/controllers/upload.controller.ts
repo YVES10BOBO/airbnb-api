@@ -5,7 +5,7 @@ import { uploadToCloudinary, deleteFromCloudinary, getOptimizedUrl } from "../co
 
 export async function uploadAvatar(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const id = Number(req.params.id);
+    const id = req.params.id;
     if (req.userId !== id) {
       res.status(403).json({ error: "You can only update your own avatar" });
       return;
@@ -36,7 +36,7 @@ export async function uploadAvatar(req: AuthRequest, res: Response, next: NextFu
 
 export async function deleteAvatar(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const id = Number(req.params.id);
+    const id = req.params.id;
     if (req.userId !== id) {
       res.status(403).json({ error: "You can only update your own avatar" });
       return;
@@ -65,7 +65,7 @@ export async function deleteAvatar(req: AuthRequest, res: Response, next: NextFu
 
 export async function uploadListingPhotos(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const id = Number(req.params.id);
+    const id = req.params.id;
     const listing = await prisma.listing.findUnique({ where: { id } });
     if (!listing) {
       res.status(404).json({ error: "Listing not found" });
@@ -112,8 +112,8 @@ export async function uploadListingPhotos(req: AuthRequest, res: Response, next:
 
 export async function deleteListingPhoto(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const id = Number(req.params.id);
-    const photoId = Number(req.params.photoId);
+    const id = req.params.id;
+    const photoId = req.params.photoId;
     const listing = await prisma.listing.findUnique({ where: { id } });
     if (!listing) {
       res.status(404).json({ error: "Listing not found" });

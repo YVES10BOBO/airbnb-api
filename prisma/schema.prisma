@@ -28,7 +28,7 @@ enum BookingStatus {
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
+  id               String    @id @default(uuid())
   name             String
   email            String    @unique
   username         String    @unique
@@ -45,23 +45,26 @@ model User {
   listings         Listing[]
   bookings         Booking[]
   profile          Profile?
+  reviews          Review[]
 
+  @@index([name])
+  @@index([role])
   @@map("users")
 }
 
 model Profile {
-  id      Int     @id @default(autoincrement())
+  id      String  @id @default(uuid())
   bio     String?
   website String?
   country String?
-  userId  Int     @unique @map("user_id")
+  userId  String  @unique @map("user_id")
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
 }
 
 model Listing {
-  id            Int         @id @default(autoincrement())
+  id            String      @id @default(uuid())
   title         String
   description   String
   location      String
@@ -72,10 +75,11 @@ model Listing {
   rating        Float?
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
-  hostId        Int         @map("host_id")
+  hostId        String      @map("host_id")
   host          User        @relation(fields: [hostId], references: [id], onDelete: Cascade)
   bookings      Booking[]
   photos        ListingPhoto[]
+  reviews       Review[]
 
   @@index([location])
   @@index([pricePerNight])
@@ -83,19 +87,19 @@ model Listing {
 }
 
 model ListingPhoto {
-  id        Int     @id @default(autoincrement())
+  id        String  @id @default(uuid())
   url       String
   publicId  String  @map("public_id")
-  listingId Int     @map("listing_id")
+  listingId String  @map("listing_id")
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@map("listing_photos")
 }
 
 model Booking {
-  id         Int           @id @default(autoincrement())
-  guestId    Int           @map("guest_id")
-  listingId  Int           @map("listing_id")
+  id         String        @id @default(uuid())
+  guestId    String        @map("guest_id")
+  listingId  String        @map("listing_id")
   checkIn    DateTime      @map("check_in")
   checkOut   DateTime      @map("check_out")
   guests     Int
@@ -106,5 +110,22 @@ model Booking {
   guest   User    @relation(fields: [guestId], references: [id], onDelete: Cascade)
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
+  @@index([status])
   @@map("bookings")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String
+  userId    String   @map("user_id")
+  listingId String   @map("listing_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([listingId])
+  @@map("reviews")
 }

@@ -6,9 +6,9 @@ import {
   createListing,
   updateListing,
   deleteListing,
-} from "../controllers/listings.controller";
-import { getListingStats } from "../controllers/stats.controller";
-import { authenticate, requireHost } from "../middlewares/auth.middleware";
+} from "../../controllers/listings.controller";
+import { getListingStats } from "../../controllers/stats.controller";
+import { authenticate, requireHost } from "../../middlewares/auth.middleware";
 import reviewsRouter from "./reviews.routes";
 
 const router = Router();
@@ -26,44 +26,37 @@ const router = Router();
  *         schema:
  *           type: integer
  *           default: 1
- *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
- *         description: Results per page
  *       - in: query
  *         name: location
  *         schema:
  *           type: string
- *         description: Filter by location (case-insensitive partial match)
  *         example: New York
  *       - in: query
  *         name: type
  *         schema:
  *           type: string
  *           enum: [APARTMENT, HOUSE, VILLA, CABIN]
- *         description: Filter by listing type
  *       - in: query
  *         name: maxPrice
  *         schema:
  *           type: number
- *         description: Filter by max price per night
  *         example: 300
  *       - in: query
  *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [pricePerNight]
- *         description: Field to sort by
  *       - in: query
  *         name: order
  *         schema:
  *           type: string
  *           enum: [asc, desc]
  *           default: asc
- *         description: Sort direction
  *     responses:
  *       200:
  *         description: Paginated list of listings
@@ -78,19 +71,6 @@ const router = Router();
  *                     $ref: '#/components/schemas/Listing'
  *                 meta:
  *                   type: object
- *                   properties:
- *                     total:
- *                       type: integer
- *                       example: 42
- *                     page:
- *                       type: integer
- *                       example: 1
- *                     limit:
- *                       type: integer
- *                       example: 10
- *                     totalPages:
- *                       type: integer
- *                       example: 5
  */
 router.get("/", getAllListings);
 
@@ -99,20 +79,18 @@ router.get("/", getAllListings);
  * /listings/search:
  *   get:
  *     summary: Search listings
- *     description: Full-text search across title and description, with optional filters for location, type, price range, and guest capacity.
+ *     description: Full-text search across title and description, with optional filters.
  *     tags: [Listings]
  *     parameters:
  *       - in: query
  *         name: q
  *         schema:
  *           type: string
- *         description: Search query (matches title and description)
  *         example: cozy cabin
  *       - in: query
  *         name: location
  *         schema:
  *           type: string
- *         description: Filter by location
  *       - in: query
  *         name: type
  *         schema:
@@ -122,17 +100,14 @@ router.get("/", getAllListings);
  *         name: minPrice
  *         schema:
  *           type: number
- *         description: Minimum price per night
  *       - in: query
  *         name: maxPrice
  *         schema:
  *           type: number
- *         description: Maximum price per night
  *       - in: query
  *         name: guests
  *         schema:
  *           type: integer
- *         description: Minimum guest capacity
  *       - in: query
  *         name: page
  *         schema:
@@ -146,17 +121,6 @@ router.get("/", getAllListings);
  *     responses:
  *       200:
  *         description: Paginated search results
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Listing'
- *                 meta:
- *                   type: object
  */
 router.get("/search", searchListings);
 
@@ -165,15 +129,14 @@ router.get("/search", searchListings);
  * /listings/{id}:
  *   get:
  *     summary: Get a single listing by ID
- *     description: Returns the listing with full host details and all bookings.
  *     tags: [Listings]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Listing ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Listing found
@@ -195,7 +158,7 @@ router.get("/:id", getListingById);
  * /listings:
  *   post:
  *     summary: Create a new listing
- *     description: Only users with HOST role can create listings.
+ *     description: Only HOST users can create listings.
  *     tags: [Listings]
  *     security:
  *       - bearerAuth: []
@@ -212,18 +175,6 @@ router.get("/:id", getListingById);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Listing'
- *       400:
- *         description: Missing or invalid fields
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       401:
- *         description: No token provided
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Only hosts can create listings
  *         content:
@@ -247,35 +198,8 @@ router.post("/", authenticate, requireHost, createListing);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Listing ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               location:
- *                 type: string
- *               pricePerNight:
- *                 type: number
- *               guests:
- *                 type: integer
- *               type:
- *                 type: string
- *                 enum: [APARTMENT, HOUSE, VILLA, CABIN]
- *               amenities:
- *                 type: array
- *                 items:
- *                   type: string
- *               rating:
- *                 type: number
- *                 nullable: true
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Listing updated
@@ -283,18 +207,6 @@ router.post("/", authenticate, requireHost, createListing);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Listing'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       403:
- *         description: Not your listing
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Listing not found
  *         content:
@@ -309,7 +221,6 @@ router.put("/:id", authenticate, updateListing);
  * /listings/{id}:
  *   delete:
  *     summary: Delete a listing
- *     description: Only the host who owns the listing or an ADMIN can delete it.
  *     tags: [Listings]
  *     security:
  *       - bearerAuth: []
@@ -318,23 +229,11 @@ router.put("/:id", authenticate, updateListing);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Listing ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Listing deleted
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       403:
- *         description: Not your listing
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Listing not found
  *         content:
@@ -349,24 +248,19 @@ router.delete("/:id", authenticate, deleteListing);
  * /listings/{id}/stats:
  *   get:
  *     summary: Get statistics for a listing
- *     description: Returns total bookings, confirmed bookings, total revenue, and average rating for a listing.
  *     tags: [Listings]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Listing ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Listing statistics
  *       404:
  *         description: Listing not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/:id/stats", getListingStats);
 

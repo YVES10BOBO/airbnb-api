@@ -10,8 +10,8 @@ import {
   getProfile,
   createProfile,
   updateProfile,
-} from "../controllers/users.controller";
-import { getUserStats } from "../controllers/stats.controller";
+} from "../../controllers/users.controller";
+import { getUserStats } from "../../controllers/stats.controller";
 
 const router = Router();
 
@@ -21,19 +21,6 @@ const router = Router();
  *   get:
  *     summary: Get all users
  *     tags: [Users]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Page number
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Number of results per page
  *     responses:
  *       200:
  *         description: List of all users
@@ -51,24 +38,20 @@ router.get("/", getAllUsers);
  * /users/{id}/stats:
  *   get:
  *     summary: Get statistics for a user
- *     description: Returns total listings and revenue for HOST users, or total bookings and spending for GUEST users.
+ *     description: HOST — total listings, bookings, revenue. GUEST — total bookings, total spent.
  *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: User ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: User statistics
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/:id/stats", getUserStats);
 
@@ -84,8 +67,8 @@ router.get("/:id/stats", getUserStats);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: User ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: User found
@@ -121,12 +104,6 @@ router.get("/:id", getUserById);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/User'
- *       400:
- *         description: Missing required fields
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/", createUser);
 
@@ -143,46 +120,13 @@ router.post("/", createUser);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: User ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: Alice Updated
- *               phone:
- *                 type: string
- *                 example: "+1-555-9999"
- *               bio:
- *                 type: string
- *                 example: Updated bio here
- *               avatar:
- *                 type: string
- *                 example: https://example.com/avatar.jpg
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: User updated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.put("/:id", updateUser);
 
@@ -199,23 +143,13 @@ router.put("/:id", updateUser);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: User ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: User deleted
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.delete("/:id", deleteUser);
 
@@ -230,23 +164,13 @@ router.delete("/:id", deleteUser);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Host user ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
- *         description: List of listings for this host
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Listing'
+ *         description: List of listings
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/:id/listings", getUserListings);
 
@@ -263,23 +187,13 @@ router.get("/:id/listings", getUserListings);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *         description: Guest user ID
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
- *         description: List of bookings for this guest
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Booking'
+ *         description: List of bookings
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/:id/bookings", getUserBookings);
 
@@ -294,16 +208,13 @@ router.get("/:id/bookings", getUserBookings);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: User profile
  *       404:
  *         description: Profile not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/:id/profile", getProfile);
 
@@ -318,7 +229,8 @@ router.get("/:id/profile", getProfile);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *           format: uuid
  *     requestBody:
  *       required: true
  *       content:
@@ -328,10 +240,8 @@ router.get("/:id/profile", getProfile);
  *             properties:
  *               bio:
  *                 type: string
- *                 example: I love traveling.
  *               website:
  *                 type: string
- *                 example: https://mywebsite.com
  *               country:
  *                 type: string
  *                 example: Rwanda
@@ -340,10 +250,6 @@ router.get("/:id/profile", getProfile);
  *         description: Profile created
  *       409:
  *         description: Profile already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/:id/profile", createProfile);
 
@@ -358,29 +264,13 @@ router.post("/:id/profile", createProfile);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               bio:
- *                 type: string
- *               website:
- *                 type: string
- *               country:
- *                 type: string
+ *           type: string
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Profile updated
  *       404:
  *         description: Profile not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.put("/:id/profile", updateProfile);
 
