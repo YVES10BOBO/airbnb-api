@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../config/prisma";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { getCache, setCache, deleteCacheByPrefix } from "../config/cache";
+import { getCache, setCache, deleteCache, deleteCacheByPrefix } from "../config/cache";
 
 export async function getListingReviews(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -81,6 +81,7 @@ export async function createReview(req: AuthRequest, res: Response, next: NextFu
 
     deleteCacheByPrefix(`reviews:listing:${listingId}`);
     deleteCacheByPrefix(`stats:listing:${listingId}`);
+    deleteCache(`ai:review-summary:${listingId}`);
 
     res.status(201).json(review);
   } catch (error) {
