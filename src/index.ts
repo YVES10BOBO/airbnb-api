@@ -9,6 +9,7 @@ import { setupSwagger } from "./config/swagger";
 import { generalLimiter } from "./middlewares/rateLimiter";
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = Number(process.env["PORT"]) || 3000;
 
 app.use(process.env["NODE_ENV"] === "production" ? morgan("combined") : morgan("dev"));
